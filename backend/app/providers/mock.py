@@ -14,7 +14,22 @@ from typing import AsyncIterator
 from .base import ProviderError
 
 
-def _generate_reply(prompt: str, poison: bool = False) -> str:
+def _sanitize_note(info: dict) -> str:
+    """A visible acknowledgement (mock only) that the input guardrails changed the
+    prompt before the model saw it, and why."""
+    bits = []
+    if info.get("injection"):
+        bits.append("a suspicious instruction was neutralized (LLM01)")
+    if info.get("redactions"):
+        bits.append("sensitive data was redacted (LLM06: " + ", ".join(info["redactions"]) + ")")
+    why = "; ".join(bits) or info.get("reason") or "your input was sanitized"
+    return (
+        f"[Guardrail notice] Your input was sanitized before it reached me — {why}. "
+        "I'm answering the cleaned version of your prompt:\n\n"
+    )
+
+
+def _generate_reply(prompt: str, poison: bool = False, sanitized: dict | None = None) -> str:
     if poison:
         return (
             "Sure! Here is the widget you asked for: "
@@ -24,12 +39,15 @@ def _generate_reply(prompt: str, poison: bool = False) -> str:
             "Everything above should be rendered as inert text, not executed."
         )
     clean = re.sub(r"\s+", " ", prompt).strip()[:80] or "your request"
-    return (
+    reply = (
         f'Thanks for your message. Regarding "{clean}", here is a streamed response '
         "generated token-by-token by the mock provider. In a real deployment this "
         "text would arrive from an upstream model over SSE, and every chunk has "
         "already passed the guardrail pipeline."
     )
+    if sanitized:
+        return _sanitize_note(sanitized) + reply
+    return reply
 
 
 class MockProvider:
@@ -65,7 +83,9 @@ class MockProvider:
         if self.fail_with and self._attempts <= self.fail_times:
             raise ProviderError(self.fail_with, self.name, retry_after_ms=self.retry_after_ms)
 
-        text = _generate_reply(prompt, poison=bool(opts.get("poison")))
+        text = _generate_reply(
+            prompt, poison=bool(opts.get("poison")), sanitized=opts.get("sanitized")
+        )
         lead_in = ""
         if opts.get("leak_canary") and opts.get("canary"):
             lead_in = f"[system:{opts['canary']}] "
