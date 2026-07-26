@@ -119,6 +119,17 @@ class Gateway:
             self._emit(True, Event(kind=EventKind.INPUT_REDACTED, stage="input", conversation_id=cid, action=verdict.action.value, check=primary_check))
         safe_prompt = verdict.text
 
+        # Human-readable summary of what the input guardrails changed, forwarded
+        # to the provider so the MOCK can visibly acknowledge it in its reply.
+        # Real providers ignore this opt.
+        sanitized_info = None
+        if verdict.action in (Action.SANITIZE, Action.REDACT):
+            redactions = sorted({l for s in verdict.signals if s.check == "LLM06" for l in s.labels})
+            injection = any(
+                s.check == "LLM01" and s.action_hint == Action.SANITIZE for s in verdict.signals
+            )
+            sanitized_info = {"reason": verdict.reason, "redactions": redactions, "injection": injection}
+
         # Seed a per-request canary for egress leak detection.
         canary = new_canary()
         egress_ctx = dataclasses.replace(ctx, stage=Stage.EGRESS, canary=canary)
@@ -134,7 +145,12 @@ class Gateway:
                 yield {"type": "provider", "name": provider.name, "model": provider.model}
                 gen = provider.stream(
                     safe_prompt,
-                    {"poison": opts.get("poison"), "canary": canary, "leak_canary": opts.get("leak_canary")},
+                    {
+                        "poison": opts.get("poison"),
+                        "canary": canary,
+                        "leak_canary": opts.get("leak_canary"),
+                        "sanitized": sanitized_info,
+                    },
                 )
                 tokens_this_attempt = 0
                 raw_acc = ""
