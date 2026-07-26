@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels: { app: frontend }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: frontend }
+  template:
+    metadata:
+      labels: { app: frontend }
+    spec:
+      containers:
+        - name: frontend
+          image: secure-llm-gateway/frontend:latest
+          ports: [{ containerPort: 3000 }]
+          env:
+            # Public backend URL the BROWSER reaches (not the in-cluster name).
+            - { name: REACT_APP_API_BASE, value: "https://api.your-domain.example" }
+            - { name: REACT_APP_DEMO_MODE, value: "false" }
+          resources:
+            requests: { cpu: "50m", memory: "128Mi" }
+            limits: { cpu: "300m", memory: "384Mi" }
+          livenessProbe:
+            httpGet: { path: /, port: 3000 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector: { app: frontend }
+  ports: [{ port: 80, targetPort: 3000 }]

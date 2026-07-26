@@ -1,0 +1,19 @@
+# React dev server for the full-stack demo. REACT_APP_API_BASE is read at
+# runtime by the CRA dev server, so the same image points at any backend URL.
+FROM node:20-alpine
+
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+
+COPY . .
+
+# Run as the built-in non-root `node` user (owns /app so the dev server can write).
+RUN chown -R node:node /app
+USER node
+
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
+
+CMD ["npm", "start"]

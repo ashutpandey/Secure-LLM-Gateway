@@ -1,0 +1,11 @@
+# Backend runtime deps. The ML MODELS live in the ml_service sidecar, not here —
+# the backend only needs httpx to call it.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pyyaml==6.0.2
+httpx==0.28.1
+
+# dev / tests
+pytest==8.3.4
+pytest-asyncio==0.25.2

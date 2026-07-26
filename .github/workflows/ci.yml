@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        working-directory: backend
+        run: pip install -r requirements.txt
+      - name: Test (incl. red-team quality gate)
+        working-directory: backend
+        run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install
+        run: npm install
+      - name: Test
+        run: npm test -- --watchAll=false
+        env:
+          CI: "true"
+
+  ml_service:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install (base, heuristic backend)
+        working-directory: ml_service
+        run: pip install -r requirements.txt
+      - name: Import check
+        working-directory: ml_service
+        run: python -c "import main; print('sidecar backend:', main.backend.id)"

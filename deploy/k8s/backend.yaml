@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels: { app: backend }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: backend }
+  template:
+    metadata:
+      labels: { app: backend }
+    spec:
+      # fsGroup lets the non-root container write the audit PVC.
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: backend
+          image: secure-llm-gateway/backend:latest
+          ports: [{ containerPort: 8000 }]
+          env:
+            - { name: DEMO_MODE, value: "false" }
+            - { name: CORS_ORIGINS, value: "https://your-frontend.example" }
+            - { name: ML_SERVICE_URL, value: "http://ml-service:8100" }
+            - { name: AUDIT_DB, value: "/data/audit.db" }
+            - { name: ALLOW_CONTROL_PLANE_WRITES, value: "false" }
+            - { name: ALLOW_EXTERNAL_EGRESS, value: "false" }
+            # ADMIN_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY -> from a Secret.
+          envFrom:
+            - secretRef: { name: backend-secrets, optional: true }
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "512Mi" }
+          livenessProbe:
+            httpGet: { path: /api/health, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /api/ready, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - { name: audit, mountPath: /data }
+      volumes:
+        - name: audit
+          persistentVolumeClaim: { claimName: backend-audit }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector: { app: backend }
+  ports: [{ port: 8000, targetPort: 8000 }]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-audit
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests: { storage: 1Gi }

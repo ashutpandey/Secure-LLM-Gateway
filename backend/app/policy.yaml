@@ -1,0 +1,14 @@
+# Policy config — hot-reloadable via POST /api/policy/reload.
+# The Policy Engine decides from the aggregated per-check score vs these
+# thresholds, adjusted by caller role (admin_relaxation) and conversation trust
+# (trust_sensitivity). Edit + reload to retune without a restart or redeploy.
+
+policy:
+  block_thresholds:
+    LLM01: 0.85
+  sanitize_thresholds:
+    LLM01: 0.55
+  admin_relaxation: 0.10 # admins get slightly higher (more lenient) thresholds
+  trust_sensitivity: 0.20 # how hard low conversation-trust tightens thresholds
+  min_threshold: 0.30 # clamp: trust can't drive a threshold below this
+  max_threshold: 0.99

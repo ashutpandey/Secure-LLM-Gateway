@@ -1,0 +1,48 @@
+# One-command full-stack demo: React UI + FastAPI backend.
+# Postgres arrives in Cycle 3-persistence, real providers in Cycle 4 gateway work,
+# the ML sidecar in Cycle 6 (uncomment ml_service then).
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DEMO_MODE=true
+      - CORS_ORIGINS=http://localhost:3000
+      - ML_SERVICE_URL=http://ml_service:8100
+      # Durable, restart-surviving tamper-evident audit (stdlib sqlite).
+      - AUDIT_DB=/data/audit.db
+      # Real providers: set keys + chain to use them (mock stays the fallback).
+      # - PROVIDER_CHAIN=openai,anthropic,mock
+      # - OPENAI_API_KEY=...
+      # - ANTHROPIC_API_KEY=...
+    volumes:
+      - audit-data:/data
+    depends_on:
+      - ml_service
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # The browser runs on the host, so it reaches the backend at localhost:8000.
+      - REACT_APP_API_BASE=http://localhost:8000
+      - REACT_APP_DEMO_MODE=true
+    depends_on:
+      - backend
+
+  # ML guardrail sidecar (heuristic backend by default; USE_REAL_MODELS=true for
+  # Prompt-Guard + Presidio — needs the heavy deps baked into its image).
+  ml_service:
+    build: ./ml_service
+    ports:
+      - "8100:8100"
+    environment:
+      - USE_REAL_MODELS=false
+
+volumes:
+  audit-data:

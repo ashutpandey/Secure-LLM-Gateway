@@ -1,0 +1,44 @@
+# Guardrail control-plane config — sets each detector's INITIAL mode/weight at
+# startup. The control-plane API (PATCH /api/registry) can override these live.
+#
+# mode: enforce | shadow | off
+#   enforce — its signal counts toward the policy decision
+#   shadow  — runs + is recorded (Inspector), but does NOT affect the decision
+#   off     — not executed
+#
+# This is where you promote a new ML detector: add it with mode: shadow, watch it
+# in the Inspector, then flip to enforce — no code change.
+
+detectors:
+  regex-injection:
+    mode: enforce
+    weight: 1.0
+  regex-pii:
+    mode: enforce
+    weight: 1.0
+  output-sanitizer:
+    mode: enforce
+    weight: 1.0
+  egress-canary:
+    mode: enforce
+    weight: 1.0
+
+  # ML detectors (Cycle 6) — call the sidecar. Default OFF so the backend has no
+  # sidecar dependency out of the box; enable via the Control panel (or here) to
+  # demo shadow -> enforce. Start with `shadow` to observe them alongside regex.
+  # NOTE: "off" is quoted — bare off is a YAML boolean (False).
+  promptguard:
+    mode: "off"
+    weight: 1.0
+  presidio-pii:
+    mode: "off"
+    weight: 1.0
+
+  # Advanced detection (Cycle 9). Default shadow: observe escalation/similarity
+  # in the Inspector before enforcing (multi-turn can over-block if enforced blind).
+  multiturn:
+    mode: shadow
+    weight: 1.0
+  known-attacks:
+    mode: shadow
+    weight: 1.0

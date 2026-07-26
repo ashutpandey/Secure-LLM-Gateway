@@ -1,0 +1,7 @@
+node_modules
+build
+backend
+ml_service
+.git
+**/__pycache__
+*.md
