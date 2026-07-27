@@ -1,41 +1,35 @@
 # Secure Streaming LLM Gateway
 
-A streaming chat console with a pluggable, ML-ready **guardrail control plane**
-(OWASP LLM Top 10) and transparent provider failover. React frontend + Python
-FastAPI backend.
-
-- **`ROADMAP.md`** — build plan & phasing (cycles)
-- **`ARCHITECTURE.md`** — the design of record (data plane vs control plane, plugin model, prior-art)
-- **`DEMO_PLAN.md`** — how to show it off, step by step
-- **`SECURITY.md`** — threat model & security posture
-- **`OPERATIONS.md`** — SLOs, runbook, dashboards, scaling
-- **`backend/README.md`** · **`ml_service/README.md`** — service details
-- **`deploy/k8s/`** — Kubernetes manifests · **`.github/workflows/ci.yml`** — CI
+A streaming chat console with a pluggable, ML-ready guardrail control plane for
+OWASP LLM Top 10 risks, plus transparent provider failover. The project combines
+a React frontend with a FastAPI backend and an optional ML sidecar.
 
 ## Run
 
-### Full stack (recommended — enables the control plane)
+### Full stack (recommended)
 ```bash
 docker-compose up --build
-# frontend → http://localhost:3000   backend → http://localhost:8000
 ```
-The frontend is pointed at the backend via `REACT_APP_API_BASE`, so chat streams
-through the real guardrail pipeline and the **Sandbox → Control** and
-**Sandbox → What-if** tabs manage the live registry/policy.
+Open the frontend at http://localhost:3000 and the backend at http://localhost:8000.
+The UI uses the live backend gateway, and the Security Sandbox tabs (Attacks,
+Control, What-if, Signals) exercise the same guardrail pipeline.
 
-### Frontend only (self-contained, no backend)
+### Frontend only
 ```bash
 npm install && npm start
 ```
-Runs on the in-browser mock gateway (codesandbox-friendly). The control-plane
-tabs show a "connect a backend" note.
+Runs the self-contained frontend experience for local development or sandbox use.
 
 ### Backend only / tests
 ```bash
-cd backend && pip install -r requirements.txt && pytest && uvicorn app.main:app --reload
+cd backend
+pip install -r requirements.txt
+pytest
+uvicorn app.main:app --reload
 ```
 
-## The demo in one line
-Open **Sandbox → Control**, flip a detector to `shadow`, send a prompt, watch its
-signal in the Inspector's **Signal breakdown** without it affecting the decision —
-then flip it to `enforce` and re-send. Same pipeline, swapped brain, no redeploy.
+## Demo flow
+
+Open the Sandbox panel, try one of the attack prompts, and watch the Inspector
+and guardrail signals react in real time. The same request path can be switched
+between shadow and enforce behavior to show how policy changes affect outcomes.
