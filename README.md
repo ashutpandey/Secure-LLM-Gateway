@@ -33,3 +33,19 @@ uvicorn app.main:app --reload
 Open the Sandbox panel, try one of the attack prompts, and watch the Inspector
 and guardrail signals react in real time. The same request path can be switched
 between shadow and enforce behavior to show how policy changes affect outcomes.
+
+## Screenshots
+
+The screenshots below show the app in action, including the sandbox workflow and guardrail responses for common LLM security scenarios.
+
+### Security sandbox
+
+![Security sandbox with sample attack prompts](docs/screenshots/sandbox.png)
+
+### XSS mitigation
+
+![XSS payload neutralized before render](docs/screenshots/XSS.png)
+
+### LLM01 and LLM06 protection
+
+![Guardrail behavior for LLM01 and LLM06 scenarios](docs/screenshots/llm01%2606.png)
