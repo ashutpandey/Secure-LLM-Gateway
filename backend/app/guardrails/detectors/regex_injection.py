@@ -29,6 +29,8 @@ _SIGNALS: list[tuple[re.Pattern, float, str]] = [
     (re.compile(r"pretend\s+(to\s+be|you\s+are)\b", re.I), 0.4, "role:pretend"),
     (re.compile(r"from\s+now\s+on\b[\s\S]{0,60}\b(no\s+restrictions|as\s+(an?\s+)?(root|admin|administrator|superuser|dan)|without\s+(any\s+)?(rules|restrictions|filters))", re.I), 0.6, "role:from-now-on"),
     (re.compile(r"reveal\s+(your\s+)?(system\s+prompt|instructions|hidden\s+rules)", re.I), 0.6, "exfil:reveal-system-prompt"),
+    (re.compile(r"\b(evade|evading|bypass|bypassing|circumvent|circumventing|defeat|disable|turn\s+off)\b.*\b(detection|safety|safeguards?|filters?|restrictions?|authentication|security|policy|protections?)\b", re.I), 0.6, "policy:bypass-safety"),
+    (re.compile(r"\b(phish|phishing|malware|credential\s+theft|steal\s+credentials|steal\s+cookies|hack|unauthorized|exploit)\b", re.I), 0.6, "policy:malicious-request"),
     (re.compile(r"<\|?(im_start|im_end|endoftext|system|assistant|user)\|?>", re.I), 0.7, "delimiter:chat-template"),
     (re.compile(r"\[\/?(INST|SYS)\]", re.I), 0.6, "delimiter:inst-block"),
     (re.compile(r"^\s*#{2,3}\s*system\b", re.I | re.M), 0.5, "delimiter:markdown-system-header"),
