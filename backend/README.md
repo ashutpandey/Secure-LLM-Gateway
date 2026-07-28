@@ -1,8 +1,3 @@
-# Backend — Secure Streaming LLM Gateway (Python / FastAPI)
-
-Cycle 1 spine: the pluggable guardrail pipeline + provider failover, streamed
-over SSE. See `../ARCHITECTURE.md` for the design and `../ROADMAP.md` for phasing.
-
 ## Run
 
 ```bash
